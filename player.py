@@ -114,7 +114,7 @@ class Hero(pygame.sprite.Sprite):
         self.jump_sound = pygame.mixer.Sound('data/sounds/jump.mp3')
         self.image = load_image('hero/right/hero1.png')
         self.rect = self.image.get_rect()
-        self.jump_sound.set_volume(0.5)
+        self.jump_sound.set_volume(0.2)
         self.going_sound = False
         self.running_sound = False
         self.jumping_sound = False
@@ -185,6 +185,9 @@ class Hero(pygame.sprite.Sprite):
                 self.fall_speed = -JUMP_POWER
                 if running and (leftt or rightt):
                     self.fall_speed -= JUMP_EXTRA_POWER
+                else:
+                    self.running_sound = False
+                    self.run_sound.stop()
                 self.image.fill(pygame.color.Color((100, 200, 100)))
                 self.animation_jump_down.blit(self.image, (0, 0))
         if leftt:
@@ -206,11 +209,12 @@ class Hero(pygame.sprite.Sprite):
             if upp:
                 if self.fall_speed < 0:
                     if not self.jumping_sound:
-                        self.jump_sound.play(-1)
+                        self.jump_sound.play(1)
                         self.jumping_sound = False
                     self.animation_jump_left_up.blit(self.image, (0, 0))
                 else:
                     self.jumping_sound = False
+                    self.jump_sound.stop()
                     self.animation_jump_left_down.blit(self.image, (0, 0))
         if rightt:
             self.speed = spd
@@ -231,17 +235,24 @@ class Hero(pygame.sprite.Sprite):
             if upp:
                 if self.fall_speed < 0:
                     if not self.jumping_sound:
-                        self.jump_sound.play(-1)
+                        self.jump_sound.play(1)
                         self.jumping_sound = False
                     self.animation_jump_right_up.blit(self.image, (0, 0))
                 else:
                     self.jumping_sound = False
+                    self.jump_sound.stop()
                     self.animation_jump_right_down.blit(self.image, (0, 0))
         if not (leftt or rightt):
             self.speed = 0
             if not upp:
                 self.image.fill(pygame.Color((100, 200, 100)))
                 self.animation_stay.blit(self.image, (0, 0))
+                self.going_sound = False
+                self.running_sound = False
+                self.jumping_sound = False
+                self.go_sound.stop()
+                self.run_sound.stop()
+                self.jump_sound.stop()
         if not self.on_ground:
             self.fall_speed += GRAVITY
         self.on_ground = False
@@ -277,20 +288,12 @@ class Hero(pygame.sprite.Sprite):
                     self.winner = True
 
     def die(self):
-        pygame.init()
+        self.going_sound = False
+        self.running_sound = False
+        self.jumping_sound = False
+        self.go_sound.stop()
+        self.run_sound.stop()
+        self.jump_sound.stop()
+
+        print(self.rect.center, self.rect.x, self.rect.y)
         create_particles(self.rect.center)
-        timer = pygame.time.Clock()
-        for _ in range(100):
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    break
-            screen.fill((100, 200, 100))
-
-            parcticles.update()
-            parcticles.draw(screen)
-
-            timer.tick(60)
-
-        death_screen(screen)
-        self.rect.x = 50
-        self.rect.y = 50

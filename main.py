@@ -1,7 +1,7 @@
 import os
 import sys
 import pygame
-from player import Hero, screen
+from player import Hero, screen, parcticles
 from blocks import Platform, BlockDie, Flag
 from camera import Camera, camera_configure
 from menu import death_screen
@@ -93,6 +93,7 @@ if __name__ == '__main__':
 
     v = 240
     FPS = 60
+    n = 0
 
     right = False
     left = False
@@ -114,29 +115,30 @@ if __name__ == '__main__':
                 hero.go_sound.stop()
             if event.type == pygame.KEYUP and event.key == pygame.K_LEFT:
                 left = False
-
                 hero.going_sound = False
                 hero.go_sound.stop()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 up = True
             if event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
                 up = False
-
                 hero.jumping_sound = False
+                hero.jump_sound.stop()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_LSHIFT:
                 runn = True
-
                 hero.going_sound = False
+                hero.go_sound.stop()
             if event.type == pygame.KEYUP and event.key == pygame.K_LSHIFT:
                 runn = False
-
                 hero.running_sound = False
                 hero.run_sound.stop()
 
         screen.fill((100, 200, 100))
 
         all_sprites.update(left, right, up, v / FPS, runn, platforms)
+        parcticles.update()
         camera.update(hero)
+
+        parcticles.draw(screen)
 
         for e in entities:
             screen.blit(e.image, camera.apply(e))
@@ -145,10 +147,16 @@ if __name__ == '__main__':
                 e.boltAnimSpikesMove.blit(e.image, (0, 0))
 
         if hero.died:
+            n += 1
             right = False
             left = False
             up = False
             runn = False
+        if n == 30:
+            n = 0
+            death_screen(screen)
+            hero.rect.x = 50
+            hero.rect.y = 50
             hero.died = False
 
         pygame.display.flip()
