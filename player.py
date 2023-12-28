@@ -1,16 +1,16 @@
 import os
 import sys
-import random
 import pygame
 import pyganim
-from blocks import BlockDie, Flag
-from menu import death_screen
+from blocks import BlockDie, Flag, Coin
 
 WIN_WIDTH = 800
 WIN_HEIGHT = 640
 size = WIN_WIDTH, WIN_HEIGHT
 screen = pygame.display.set_mode(size)
 screen_rect = (0, 0, WIN_WIDTH, WIN_HEIGHT)
+
+FONE_COLOR = (150, 150, 150)
 
 ANIMATION_SPEED = 100
 
@@ -56,8 +56,6 @@ right = False
 left = False
 up = False
 
-parcticles = pygame.sprite.Group()
-
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
@@ -75,46 +73,15 @@ def load_image(name, colorkey=None):
     return image
 
 
-class Particle(pygame.sprite.Sprite):
-    fire = [load_image("backgrounds/fire.png")]
-    for scale in (5, 10, 20):
-        fire.append(pygame.transform.scale(fire[0], (scale, scale)))
-
-    def __init__(self, pos, dx, dy):
-        super().__init__(parcticles)
-        self.image = random.choice(self.fire)
-        self.rect = self.image.get_rect()
-        self.velocity = [dx, dy]
-        self.rect.x, self.rect.y = pos
-        self.gravity = GRAVITY
-
-    def update(self):
-        self.velocity[1] += self.gravity
-        self.rect.x += self.velocity[0]
-        self.rect.y += self.velocity[1]
-        if not self.rect.colliderect(screen_rect):
-            self.kill()
-
-
-def create_particles(position):
-    # количество создаваемых частиц
-    particle_count = 20
-    # возможные скорости
-    numbers = range(-5, 6)
-    for _ in range(particle_count):
-        Particle(position, random.choice(numbers), random.choice(numbers))
-
-
 class Hero(pygame.sprite.Sprite):
-
     def __init__(self, *group):
         super().__init__(*group)
         self.go_sound = pygame.mixer.Sound('data/sounds/go.mp3')
         self.run_sound = pygame.mixer.Sound('data/sounds/run.mp3')
         self.jump_sound = pygame.mixer.Sound('data/sounds/jump.mp3')
+        self.jump_sound.set_volume(0.4)
         self.image = load_image('hero/right/hero1.png')
         self.rect = self.image.get_rect()
-        self.jump_sound.set_volume(0.2)
         self.going_sound = False
         self.running_sound = False
         self.jumping_sound = False
@@ -122,11 +89,11 @@ class Hero(pygame.sprite.Sprite):
         self.on_ground = False
         self.winner = False
         self.died = False
-        self.n = 0
+        self.coins_collected = 0
         self.speed = 0
         self.fall_speed = 0
-        self.rect.y += 50
-        self.rect.x += 50
+        self.rect.y = 50
+        self.rect.x = 50
 
         animations = []
         speed_animations = []
@@ -177,22 +144,21 @@ class Hero(pygame.sprite.Sprite):
         self.animation_jump_up.play()
 
     def update(self, leftt, rightt, upp, spd, running, platformms):
-        if self.n == 28:
-            self.n = 0
-        self.n += 1
         if upp:
             if self.on_ground:
+                self.jump_sound.play()
+                self.jumping_sound = True
                 self.fall_speed = -JUMP_POWER
                 if running and (leftt or rightt):
                     self.fall_speed -= JUMP_EXTRA_POWER
                 else:
                     self.running_sound = False
                     self.run_sound.stop()
-                self.image.fill(pygame.color.Color((100, 200, 100)))
+                self.image.fill(pygame.color.Color(FONE_COLOR))
                 self.animation_jump_down.blit(self.image, (0, 0))
         if leftt:
             self.speed = -spd
-            self.image.fill(pygame.Color((100, 200, 100)))
+            self.image.fill(pygame.Color(FONE_COLOR))
             if running:
                 self.speed -= MOVE_EXTRA_SPEED
                 if not upp:
@@ -218,7 +184,7 @@ class Hero(pygame.sprite.Sprite):
                     self.animation_jump_left_down.blit(self.image, (0, 0))
         if rightt:
             self.speed = spd
-            self.image.fill(pygame.Color((100, 200, 100)))
+            self.image.fill(pygame.Color(FONE_COLOR))
             if running:
                 self.speed += MOVE_EXTRA_SPEED
                 if not upp:
@@ -245,7 +211,7 @@ class Hero(pygame.sprite.Sprite):
         if not (leftt or rightt):
             self.speed = 0
             if not upp:
-                self.image.fill(pygame.Color((100, 200, 100)))
+                self.image.fill(pygame.Color(FONE_COLOR))
                 self.animation_stay.blit(self.image, (0, 0))
                 self.going_sound = False
                 self.running_sound = False
@@ -265,20 +231,21 @@ class Hero(pygame.sprite.Sprite):
     def collide(self, xvel, yvel, platformss):
         for p in platformss:
             if pygame.sprite.collide_rect(self, p):
-                if xvel > 0:
-                    self.rect.right = p.rect.left
+                if not isinstance(p, Flag) and not isinstance(p, BlockDie) and not isinstance(p, Coin):
+                    if xvel > 0:
+                        self.rect.right = p.rect.left
 
-                if xvel < 0:
-                    self.rect.left = p.rect.right
+                    if xvel < 0:
+                        self.rect.left = p.rect.right
 
-                if yvel > 0:
-                    self.rect.bottom = p.rect.top
-                    self.on_ground = True
-                    self.fall_speed = 0
+                    if yvel > 0:
+                        self.rect.bottom = p.rect.top
+                        self.on_ground = True
+                        self.fall_speed = 0
 
-                if yvel < 0:
-                    self.rect.top = p.rect.bottom
-                    self.fall_speed = 0
+                    if yvel < 0:
+                        self.rect.top = p.rect.bottom
+                        self.fall_speed = 0
 
                 if isinstance(p, BlockDie):
                     self.died = True
@@ -287,6 +254,12 @@ class Hero(pygame.sprite.Sprite):
                 elif isinstance(p, Flag):
                     self.winner = True
 
+                elif isinstance(p, Coin):
+                    if not p.collected:
+                        self.coins_collected += 1
+                        p.kill()
+                        p.collected = True
+
     def die(self):
         self.going_sound = False
         self.running_sound = False
@@ -294,6 +267,3 @@ class Hero(pygame.sprite.Sprite):
         self.go_sound.stop()
         self.run_sound.stop()
         self.jump_sound.stop()
-
-        print(self.rect.center, self.rect.x, self.rect.y)
-        create_particles(self.rect.center)

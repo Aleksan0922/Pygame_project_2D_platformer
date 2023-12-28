@@ -1,7 +1,5 @@
 import pygame
-
-WIN_WIDTH = 800
-WIN_HEIGHT = 640
+from player import WIN_WIDTH, WIN_HEIGHT
 
 
 class Camera(object):
@@ -22,8 +20,8 @@ def camera_configure(camera, target_rect):
     q, t = -q + WIN_WIDTH / 2, -t + WIN_HEIGHT / 2
 
     q = min(0, q)
-    q = max(-(camera.width-WIN_WIDTH), q)
-    t = max(-(camera.height-WIN_HEIGHT), t)
+    q = max(-(camera.width - WIN_WIDTH), q)
+    t = max(-(camera.height - WIN_HEIGHT), t)
     t = min(0, t)
 
     return pygame.Rect(q, t, w, h)

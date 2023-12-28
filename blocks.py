@@ -5,18 +5,27 @@ import pyganim
 
 PLATFORM_WIDTH = 32
 PLATFORM_HEIGHT = 32
-PLATFORM_COLOR = "#FF6262"
+PLATFORM_COLOR = (100, 100, 100)
 
-ANIMATION_SPIKES = [('data/platforms/spikes1.png', 150),
-                    ('data/platforms/spikes2.png', 150),
-                    ('data/platforms/spikes3.png', 150),
-                    ('data/platforms/spikes4.png', 150),
-                    ('data/platforms/spikes5.png', 150),
-                    ('data/platforms/spikes6.png', 150),
-                    ('data/platforms/spikes7.png', 150),
-                    ('data/platforms/spikes8.png', 150),
-                    ('data/platforms/spikes9.png', 150),
-                    ('data/platforms/spikes10.png', 150)]
+ANIMATION_SPIKES = [('data/platforms/spikes/spikes1.png', 150),
+                    ('data/platforms/spikes/spikes2.png', 150),
+                    ('data/platforms/spikes/spikes3.png', 150),
+                    ('data/platforms/spikes/spikes4.png', 150),
+                    ('data/platforms/spikes/spikes5.png', 150),
+                    ('data/platforms/spikes/spikes6.png', 150),
+                    ('data/platforms/spikes/spikes7.png', 150),
+                    ('data/platforms/spikes/spikes8.png', 150),
+                    ('data/platforms/spikes/spikes9.png', 150),
+                    ('data/platforms/spikes/spikes10.png', 150)]
+
+ANIMATION_COINS = [('data/platforms/coins/coin1.png', 100),
+                   ('data/platforms/coins/coin2.png', 100),
+                   ('data/platforms/coins/coin3.png', 100),
+                   ('data/platforms/coins/coin4.png', 100),
+                   ('data/platforms/coins/coin5.png', 100),
+                   ('data/platforms/coins/coin6.png', 100),
+                   ('data/platforms/coins/coin7.png', 100),
+                   ('data/platforms/coins/coin8.png', 100)]
 
 
 def load_image(name, colorkey=None):
@@ -44,13 +53,49 @@ class Platform(pygame.sprite.Sprite):
 
 
 class BlockDie(Platform):
-    def __init__(self, x, y):
+    def __init__(self, x, y, *points):
         Platform.__init__(self, x, y)
-        self.image = load_image("platforms/spikes1.png")
+        self.image = load_image("platforms/spikes/spikes1.png")
 
-        self.boltAnimSpikesMove = pyganim.PygAnimation(ANIMATION_SPIKES)
-        self.boltAnimSpikesMove.play()
-        self.boltAnimSpikesMove.blit(self.image, (0, 0))
+        self.points = [(x, y), *points]
+        self.curr_point = (x, y)
+        self.need_point = None
+        self.need_x_move = 0
+        self.need_y_move = 0
+
+        if len(self.points) > 1:
+            self.need_point = self.points[0]
+
+        self.animation_spikes_move = pyganim.PygAnimation(ANIMATION_SPIKES)
+        self.animation_spikes_move.play()
+        self.animation_spikes_move.blit(self.image, (0, 0))
+
+    def update(self):
+        if len(self.points) > 1:
+            if self.curr_point == self.need_point:
+                if self.need_point == self.points[0]:
+                    self.need_point = self.points[1]
+                elif self.need_point == self.points[-1]:
+                    self.need_point = self.points[0]
+                else:
+                    self.need_point = self.points[self.points.index(self.curr_point) + 1]
+                if self.curr_point[0] != self.need_point[0]:
+                    if self.curr_point[0] > self.need_point[0]:
+                        self.need_x_move = -1
+                        self.need_y_move = 0
+                    elif self.curr_point[0] < self.need_point[0]:
+                        self.need_x_move = 1
+                        self.need_y_move = 0
+                elif self.curr_point[1] != self.need_point[1]:
+                    if self.curr_point[1] > self.need_point[1]:
+                        self.need_y_move = -1
+                        self.need_x_move = 0
+                    elif self.curr_point[1] < self.need_point[1]:
+                        self.need_y_move = 1
+                        self.need_x_move = 0
+            self.rect.x += self.need_x_move
+            self.rect.y += self.need_y_move
+            self.curr_point = (self.rect.x, self.rect.y)
 
 
 class Flag(pygame.sprite.Sprite):
@@ -58,3 +103,14 @@ class Flag(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.image = load_image("platforms/flag.png")
         self.rect = pygame.Rect(x, y, PLATFORM_WIDTH, PLATFORM_HEIGHT)
+
+
+class Coin(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = load_image("platforms/coins/coin1.png")
+        self.rect = pygame.Rect(x, y, PLATFORM_WIDTH, PLATFORM_HEIGHT)
+        self.animation_coin_spin = pyganim.PygAnimation(ANIMATION_COINS)
+        self.animation_coin_spin.play()
+        self.animation_coin_spin.blit(self.image, (0, 0))
+        self.collected = False
