@@ -132,6 +132,8 @@ if __name__ == '__main__':
     text_w = text.get_width()
     text_h = text.get_height()
 
+    start_time = pygame.time.get_ticks()
+
     right = False
     left = False
     up = False
@@ -199,6 +201,8 @@ if __name__ == '__main__':
 
             camera = Camera(camera_configure, total_level_width, total_level_height)
 
+            start_time = pygame.time.get_ticks()
+
             hero.coins_collected = 0
             hero.rect.x = 50
             hero.rect.y = 50
@@ -224,13 +228,18 @@ if __name__ == '__main__':
             hero = Hero(all_sprites)
             entities.add(hero)
 
-            curr_level = 'level2.txt'
+            if curr_level == 'level2.txt':
+                curr_level = 'level3.txt'
+            elif curr_level == 'level1.txt':
+                curr_level = 'level2.txt'
             generate_level(curr_level)
 
             total_level_width = (len(level[0]) - 1) * PLATFORM_WIDTH
             total_level_height = len(level) * PLATFORM_HEIGHT
 
             camera = Camera(camera_configure, total_level_width, total_level_height)
+
+            start_time = pygame.time.get_ticks()
 
             hero.coins_collected = 0
 
@@ -251,6 +260,16 @@ if __name__ == '__main__':
 
         text = font.render(f'{hero.coins_collected}', True, (10, 10, 10))
         screen.blit(text, (text_x, text_y))
+
+        curr_time = pygame.time.get_ticks()
+        time = font.render(str((curr_time - start_time) // 100 / 10), True, (10, 10, 10))
+
+        time_x = 30
+        time_y = 20
+        time_w = time.get_width()
+        time_h = time.get_height()
+
+        screen.blit(time, (time_x, time_y))
 
         pygame.display.flip()
 
