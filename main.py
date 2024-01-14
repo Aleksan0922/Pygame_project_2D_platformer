@@ -4,6 +4,7 @@ import pygame
 from player import Hero, screen, WIN_WIDTH, WIN_HEIGHT, FONE_COLOR
 from blocks import Platform, BlockDie, Flag, Coin, PLATFORM_HEIGHT, PLATFORM_WIDTH, PLATFORM_COLOR
 from camera import Camera, camera_configure
+from records import show_records
 from menu import death_screen
 
 pygame.mixer.pre_init(44100, -16, 1, 512)
@@ -99,7 +100,114 @@ def die(hero):
     hero.rect.y = 50
 
 
+class Menu:
+    def __init__(self, items, screen):
+        self.items = items
+        self.screen = screen
+        self.font = pygame.font.Font(None, 50)
+        self.bg_color = (0, 0, 0)
+        self.fg_color = (255, 255, 255)
+        self.selected_color = (255, 0, 0)
+        self.clock = pygame.time.Clock()
+        self.items_count = len(self.items)
+        self.selected = 0
+
+    def run(self):
+        while True:
+            self.screen.fill(self.bg_color)
+            for index, item in enumerate(self.items):
+                if self.selected == index:
+                    label = self.font.render(item, True, self.selected_color)
+                else:
+                    label = self.font.render(item, True, self.fg_color)
+                width = label.get_width()
+                height = label.get_height()
+                pos_x = (WIN_WIDTH - width) / 2
+                total_height = self.items_count * height
+                pos_y = (WIN_HEIGHT - total_height) / 2 + index * height
+                self.screen.blit(label, (pos_x, pos_y))
+
+            pygame.display.flip()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        self.selected -= 1
+                    if event.key == pygame.K_DOWN:
+                        self.selected += 1
+                    if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                        return self.selected
+                    if event.key == pygame.K_ESCAPE:
+                        return -1
+            if self.selected < 0:
+                self.selected = 0
+            if self.selected >= self.items_count:
+                self.selected = self.items_count - 1
+            self.clock.tick(10)
+
+
+class YourName:
+    def __init__(self):
+        self.text = ''
+        self.font = pygame.font.Font(None, 30)
+
+    def name_screen(self):
+
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        return self.text
+                    if event.key == pygame.K_BACKSPACE:
+                        self.text = self.text[:-1]
+                    else:
+                        print(pygame.key.name(event.key))
+                        print(event.unicode)
+                        self.text += event.unicode
+            textt = self.font.render(self.text, True, (255, 0, 0))
+            screen.blit(textt, (90, 90))
+
+
 if __name__ == '__main__':
+    players_name = YourName()
+    players_name.name_screen()
+
+    menu_items = ['Выбор уровней', 'Рекорды', 'Выход']
+    menu = Menu(menu_items, screen)
+
+    running = True
+    while running:
+        choice = menu.run()
+        if choice == 0:
+            level_menu_items = ['Уровень 1', 'Уровень 2', 'Уровень 3']
+            level_menu = Menu(level_menu_items, screen)
+            level_choice = level_menu.run()
+            if level_choice == 0:
+                curr_level = 'level1.txt'
+                break
+            elif level_choice == 1:
+                curr_level = 'level2.txt'
+                break
+            elif level_choice == 2:
+                curr_level = 'level3.txt'
+                break
+
+        elif choice == 1:
+            show_records('aleks')
+
+        elif choice == 2:
+            confirm_menu = Menu(['Да', 'Нет'], screen)
+            confirm_choice = confirm_menu.run()
+
+            if confirm_choice == 0:
+                running = False
+            else:
+                pass
+
     all_sprites = pygame.sprite.Group()
     entities = pygame.sprite.Group()
     animatedEntities = pygame.sprite.Group()
@@ -113,7 +221,6 @@ if __name__ == '__main__':
     clock = pygame.time.Clock()
 
     level = []
-    curr_level = 'level1.txt'
 
     generate_level(curr_level)
 
