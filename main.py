@@ -149,11 +149,11 @@ class Menu:
 
 class YourName:
     def __init__(self):
+        self.screen = screen
         self.text = ''
         self.font = pygame.font.Font(None, 30)
 
     def name_screen(self):
-
         running = True
         while running:
             for event in pygame.event.get():
@@ -165,11 +165,10 @@ class YourName:
                     if event.key == pygame.K_BACKSPACE:
                         self.text = self.text[:-1]
                     else:
-                        print(pygame.key.name(event.key))
-                        print(event.unicode)
-                        self.text += event.unicode
+                        print(self.text)
+                        self.text += pygame.key.name(event.key)
             textt = self.font.render(self.text, True, (255, 0, 0))
-            screen.blit(textt, (90, 90))
+            self.screen.blit(textt, (90, 90))
 
 
 if __name__ == '__main__':
