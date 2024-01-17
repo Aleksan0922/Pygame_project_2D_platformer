@@ -12,153 +12,7 @@ pygame.mixer.init()
 
 entities = set()
 
-def generate_level(lvl):
-    global level
-    level_text = open(lvl, encoding="utf8")
-    level = level_text.readlines()
-    nums = level[-2].split()
-    nums = [int(n) for n in nums]
-    points = level[-1].split('. ')
-    points = [p.strip('(').strip(')') for p in points]
-    points = [(p.split(', ')[0], p.split(', ')[1]) for p in points]
-    level = level[:-2]
-    entities.add(pf)
 
-    x = 0
-    y = 0
-    for row in level:
-        for col in row:
-            if col == "-":
-                pf = Platform(x, y)
-                entities.add(pf)
-                platforms.append(pf)
-            if col == "*":
-                bd = BlockDie(x, y)
-                if len(spikes) + 1 in nums:
-                    bd = BlockDie(x, y, *[(eval(p[0].replace('x', str(x)).replace('y', str(y))),
-                                           eval(p[1].replace('x', str(x)).replace('y', str(y))))
-                                          for p in points])
-                entities.add(bd)
-                platforms.append(bd)
-                spikes.append(bd)
-            if col == "+":
-                bd = BlockDie(x, y)
-                bd = BlockDie(x, y, (x + 64, y), (x + 64, y + 64), (x, y + 64))
-                entities.add(bd)
-                platforms.append(bd)
-            if col == "=":
-                bd = BlockDie(x, y)
-                bd = BlockDie(x, y, (x + 64, y))
-                entities.add(bd)
-                platforms.append(bd)
-            if col == "!":
-                bd = BlockDie(x, y)
-                bd = BlockDie(x, y, (x, y + 64))
-                entities.add(bd)
-                platforms.append(bd)
-            if col == "0":
-                bd = BlockDie(x, y)
-                bd = BlockDie(x, y, (x, y + 64), (x + 64, y + 64), (x + 64, y))
-                entities.add(bd)
-                platforms.append(bd)
-            if col == "F":
-                f = Flag(x, y)
-                entities.add(f)
-                platforms.append(f)
-                animatedEntities.add(f)
-            if col == 'C':
-                coin = Coin(x, y)
-                entities.add(coin)
-                platforms.append(coin)
-            x += PLATFORM_WIDTH
-        y += PLATFORM_HEIGHT
-        x = 0
-
-
-class Menu:
-    def __init__(self, items, screen):
-        self.items = items
-        self.screen = screen
-        self.font = pygame.font.Font(None, 50)
-        self.bg_color = (0, 0, 0)
-        self.fg_color = (255, 255, 255)
-        self.selected_color = (255, 0, 0)
-        self.clock = pygame.time.Clock()
-        self.items_count = len(self.items)
-        self.selected = 0
-
-    def run(self):
-        while True:
-            self.screen.fill(self.bg_color)
-            for index, item in enumerate(self.items):
-                if self.selected == index:
-                    label = self.font.render(item, True, self.selected_color)
-                else:
-                    label = self.font.render(item, True, self.fg_color)
-                width = label.get_width()
-                height = label.get_height()
-                pos_x = (WIN_WIDTH - width) / 2
-                total_height = self.items_count * height
-                pos_y = (WIN_HEIGHT - total_height) / 2 + index * height
-                self.screen.blit(label, (pos_x, pos_y))
-
-            pygame.display.flip()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_UP:
-                        self.selected -= 1
-                    if event.key == pygame.K_DOWN:
-                        self.selected += 1
-                    if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
-                        return self.selected
-                    if event.key == pygame.K_ESCAPE:
-                        return -1
-            if self.selected < 0:
-                self.selected = 0
-            if self.selected >= self.items_count:
-                self.selected = self.items_count - 1
-            self.clock.tick(10)
-
-
-pygame.init()
-size = WIN_WIDTH, WIN_HEIGHT
-screen = pygame.display.set_mode(size)
-
-menu_items = ['Выбор уровней', 'Рекорды', 'Выход']
-menu = Menu(menu_items, screen)
-
-running = True
-while running:
-    choice = menu.run()
-    if choice == 0:
-        level_menu_items = ['Уровень 1', 'Уровень 2', 'Уровень 3']
-        level_menu = Menu(level_menu_items, screen)
-        level_choice = level_menu.run()
-        if level_choice == 0:
-            curr_level = 'level1.txt'
-            break
-        elif level_choice == 1:
-            curr_level = 'level2.txt'
-            break
-        elif level_choice == 2:
-            curr_level = 'level3.txt'
-            break
-
-    elif choice == 1:
-        show_records('aleks')
-
-    elif choice == 2:
-        confirm_menu = Menu(['Да', 'Нет'], screen)
-        confirm_choice = confirm_menu.run()
-
-        if confirm_choice == 0:
-            running = False
-        else:
-            pass
-
-pygame.quit()
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     if not os.path.isfile(fullname):
@@ -404,18 +258,39 @@ if __name__ == '__main__':
             platforms = []
             spikes = []
 
+            coins = hero.coins_collected
+
             hero = Hero(all_sprites)
             entities.add(hero)
-
+            level_num = 0
             if curr_level == 'level2.txt':
                 curr_level = 'level3.txt'
                 generate_level(curr_level)
+                level_num = 2
             elif curr_level == 'level1.txt':
                 curr_level = 'level2.txt'
+                level_num = 1
                 generate_level(curr_level)
             else:
                 win_screen(screen)
                 running = False
+                level_num = 3
+
+            curr_time = pygame.time.get_ticks()
+            if os.path.exists('your_records.txt'):
+                f = open('your_records.txt', mode='a')
+                f.write(f'Num of level: {level_num}, Collected coins: {coins}, '
+                        f'Time spent: {str((curr_time - start_time) // 100 / 10)}\n')
+                f.close()
+            else:
+                try:
+                    with open('your_records.txt', 'x') as fp:
+                        fp.write(f'Num of level: {level_num}, Collected coins: {coins}, '
+                                f'Time spent: {str((curr_time - start_time) // 100 / 10)}\n')
+                except FileExistsError:
+                    with open('your_records.txt.txt', 'a') as f:
+                        f.write(f'Num of level: {level_num}, Collected coins: {coins}, '
+                                f'Time spent: {str((curr_time - start_time) // 100 / 10)}\n')
 
             total_level_width = (len(level[0]) - 1) * PLATFORM_WIDTH
             total_level_height = len(level) * PLATFORM_HEIGHT
