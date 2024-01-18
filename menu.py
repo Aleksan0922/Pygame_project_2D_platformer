@@ -35,7 +35,8 @@ class Menu:
         self.selected = 0
 
     def run(self):
-        while True:
+        running = True
+        while running:
             self.screen.fill(self.bg_color)
             for index, item in enumerate(self.items):
                 if self.selected == index:
@@ -52,7 +53,7 @@ class Menu:
             pygame.display.flip()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    pygame.quit()
+                    return -1
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP:
                         self.selected -= 1
