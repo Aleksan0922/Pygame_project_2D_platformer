@@ -143,6 +143,7 @@ if __name__ == '__main__':
 
             if confirm_choice == 0:
                 running = False
+                quitt = True
             else:
                 pass
 
